@@ -30,27 +30,27 @@ public class Storage {
         BAREMETAL(false, false, false, "BAREMETAL"),
         TAR(false, false, false, "tar");
 
-        private final boolean thinProvisioned;
+        private final boolean supportThinProvisioning;
         private final boolean supportSparse;
         private final boolean supportSnapshot;
         private final String fileExtension;
 
-        private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot) {
-            this.thinProvisioned = thinProvisioned;
+        private ImageFormat(boolean supportThinProvisioning, boolean supportSparse, boolean supportSnapshot) {
+            this.supportThinProvisioning = supportThinProvisioning;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
             fileExtension = null;
         }
 
-        private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
-            this.thinProvisioned = thinProvisioned;
+        private ImageFormat(boolean supportThinProvisioning, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
+            this.supportThinProvisioning = supportThinProvisioning;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
             this.fileExtension = fileExtension;
         }
 
-        public boolean isThinProvisioned() {
-            return thinProvisioned;
+        public boolean supportThinProvisioning() {
+            return supportThinProvisioning;
         }
 
         public boolean supportsSparse() {
