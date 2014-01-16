@@ -20,7 +20,7 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.*;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -40,10 +40,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -645,6 +642,11 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public ImageFormat getFormat() {
         return this.volumeVO.getFormat();
+    }
+
+    @Override
+    public Storage.ImagePreAllocation getPreAllocation(){
+        return this.volumeVO.getPreAllocation();
     }
 
     @Override

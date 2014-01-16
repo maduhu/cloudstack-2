@@ -70,6 +70,12 @@ public class Storage {
         
     }
 
+    public static enum ImagePreAllocation {
+        Off,
+        Metadata,
+        Full
+    }
+
     public static enum FileSystem {
         Unknown,
         ext3,

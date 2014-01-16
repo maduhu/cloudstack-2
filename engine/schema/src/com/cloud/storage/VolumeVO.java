@@ -144,6 +144,9 @@ public class VolumeVO implements Volume {
     @Column(name = "format")
     private Storage.ImageFormat format;
 
+    @Column(name = "pre_allocation")
+    private Storage.ImagePreAllocation preAllocation;
+
     @Column(name = "display_volume", updatable = true, nullable = false)
     protected boolean displayVolume = true;
 
@@ -242,6 +245,7 @@ public class VolumeVO implements Volume {
         this.templateId = that.getTemplateId();
         this.deviceId = that.getDeviceId();
         this.format = that.getFormat();
+        this.preAllocation = this.getPreAllocation();
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -560,7 +564,15 @@ public class VolumeVO implements Volume {
     public void setFormat(Storage.ImageFormat format) {
         this.format = format;
     }
-    
+
+    public Storage.ImagePreAllocation getPreAllocation() {
+        return preAllocation;
+    }
+
+    public void setPreAllocation(Storage.ImagePreAllocation preAllocation){
+        this.preAllocation = preAllocation;
+    }
+
     public void setVmSnapshotChainSize(Long vmSnapshotChainSize){
         this.vmSnapshotChainSize = vmSnapshotChainSize;
     }

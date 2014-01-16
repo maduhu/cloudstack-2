@@ -37,6 +37,7 @@ public class VolumeObjectTO implements DataTO {
     private long accountId;
     private String chainInfo;
     private Storage.ImageFormat format;
+    private Storage.ImagePreAllocation preAllocation;
     private long id;
 
     private Long deviceId;
@@ -67,6 +68,7 @@ public class VolumeObjectTO implements DataTO {
         this.name = volume.getName();
         this.setId(volume.getId());
         this.format = volume.getFormat();
+        this.preAllocation = volume.getPreAllocation();
         this.bytesReadRate = volume.getBytesReadRate();
         this.bytesWriteRate = volume.getBytesWriteRate();
         this.iopsReadRate = volume.getIopsReadRate();
@@ -179,6 +181,10 @@ public class VolumeObjectTO implements DataTO {
 
     public Storage.ImageFormat getFormat() {
         return format;
+    }
+
+    public Storage.ImagePreAllocation getPreAllocation(){
+        return preAllocation;
     }
 
     public void setFormat(Storage.ImageFormat format) {
