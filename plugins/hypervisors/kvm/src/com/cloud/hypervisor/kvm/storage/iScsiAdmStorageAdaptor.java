@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+import com.cloud.storage.Storage;
+import com.cloud.vm.DiskProfile;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
@@ -340,13 +342,13 @@ public class iScsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size,
-            KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format,
+            Storage.ImagePreAllocation preAllocation, long size, KVMStoragePool destPool, int timeout) {
         throw new UnsupportedOperationException("Creating a disk from a template is not yet supported for this configuration.");
     }
 
     @Override
-    public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk, String name, PhysicalDiskFormat format,
+    public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk, String name, PhysicalDiskFormat format, Storage.ImagePreAllocation preAllocation,
             long size, KVMStoragePool destPool) {
         throw new UnsupportedOperationException("Creating a template from a disk is not yet supported for this configuration.");
     }

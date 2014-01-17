@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.storage.Storage.StoragePoolType;
@@ -41,6 +42,7 @@ public class VolumeTO implements InternalIdentity {
     private Long bytesWriteRate;
     private Long iopsReadRate;
     private Long iopsWriteRate;
+    private Storage.ImagePreAllocation preAllocation;
     private Long chainSize;
 
     public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
@@ -174,6 +176,14 @@ public class VolumeTO implements InternalIdentity {
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public void setPreAllocation(Storage.ImagePreAllocation preAllocation){
+        this.preAllocation = preAllocation;
+    }
+
+    public Storage.ImagePreAllocation getPreAllocation(){
+        return preAllocation;
     }
 
     public Long getChainSize() {

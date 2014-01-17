@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 
@@ -83,23 +84,38 @@ public class QemuImg {
      *            The file to create
      * @param backingFile
      *            A backing file if used (for example with qcow2)
+     * @param preAllocation
+     *            preallocation mode
      * @param options
      *            Options for the create. Takes a Map<String, String> with key value
      *            pairs which are passed on to qemu-img without validation.
      * @return void
      */
-    public void create(QemuImgFile file, QemuImgFile backingFile, Map<String, String> options) throws QemuImgException {
+    public void create(QemuImgFile file, QemuImgFile backingFile, Storage.ImagePreAllocation preAllocation, Map<String, String> options) throws QemuImgException {
         Script s = new Script(_qemuImgPath, timeout);
         s.add("create");
 
-        if (options != null && !options.isEmpty()) {
-            s.add("-o");
-            String optionsStr = "";
-            for (Map.Entry<String, String> option : options.entrySet()) {
-                optionsStr += option.getKey() + "=" + option.getValue() + ",";
-            }
-            s.add(optionsStr);
+        if (options == null ){
+            options = new HashMap<String, String>();
         }
+
+        preAllocation = Storage.ImagePreAllocation.Metadata;
+
+        switch(preAllocation){
+            case Off:
+                options.put("preallocation", "off");
+            case Metadata:
+                options.put("preallocation", "metadata");
+            case Full:
+                options.put("preallocation", "full");
+        }
+
+        s.add("-o");
+        String optionsStr = "";
+        for (Map.Entry<String, String> option : options.entrySet()) {
+            optionsStr += option.getKey() + "=" + option.getValue() + ",";
+        }
+        s.add(optionsStr);
 
         /*
             -b for a backing file does not show up in the docs, but it works.
@@ -135,7 +151,7 @@ public class QemuImg {
      * @return void
      */
     public void create(QemuImgFile file) throws QemuImgException {
-        this.create(file, null, null);
+        this.create(file, null, null, null);
     }
 
     /**
@@ -150,7 +166,22 @@ public class QemuImg {
      * @return void
      */
     public void create(QemuImgFile file, QemuImgFile backingFile) throws QemuImgException {
-        this.create(file, backingFile, null);
+        this.create(file, backingFile, null, null);
+    }
+
+    /**
+     * Create a new image
+     *
+     * This method calls 'qemu-img create'
+     *
+     * @param file
+     *            The file to create
+     * @param backingFile
+     *            A backing file if used (for example with qcow2)
+     * @return void
+     */
+    public void create(QemuImgFile file, QemuImgFile backingFile, Storage.ImagePreAllocation preAllocation) throws QemuImgException {
+        this.create(file, backingFile, preAllocation, null);
     }
 
     /**
@@ -166,7 +197,7 @@ public class QemuImg {
      * @return void
      */
     public void create(QemuImgFile file, Map<String, String> options) throws QemuImgException {
-        this.create(file, null, options);
+        this.create(file, null, null, options);
     }
 
     /**

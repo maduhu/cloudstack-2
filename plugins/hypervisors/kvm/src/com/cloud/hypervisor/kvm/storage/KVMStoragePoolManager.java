@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 import java.util.UUID;
 
+import com.cloud.storage.Storage;
+import com.cloud.vm.DiskProfile;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -317,33 +319,33 @@ public class KVMStoragePoolManager {
     }
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name,
-                                                    KVMStoragePool destPool, int timeout) {
+                                                  Storage.ImagePreAllocation preAllocation, KVMStoragePool destPool, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
 
         // LibvirtStorageAdaptor-specific statement
         if (destPool.getType() == StoragePoolType.RBD) {
             return adaptor.createDiskFromTemplate(template, name,
-                    PhysicalDiskFormat.RAW, template.getSize(), destPool, timeout);
+                    PhysicalDiskFormat.RAW, preAllocation, template.getSize(), destPool, timeout);
         } else if (destPool.getType() == StoragePoolType.CLVM) {
             return adaptor.createDiskFromTemplate(template, name,
-                                       PhysicalDiskFormat.RAW, template.getSize(),
+                                       PhysicalDiskFormat.RAW, preAllocation, template.getSize(),
                                        destPool, timeout);
         } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
             return adaptor.createDiskFromTemplate(template, name,
-                    PhysicalDiskFormat.DIR,
+                    PhysicalDiskFormat.DIR, preAllocation,
                     template.getSize(), destPool, timeout);
         } else {
             return adaptor.createDiskFromTemplate(template, name,
-                    PhysicalDiskFormat.QCOW2,
+                    PhysicalDiskFormat.QCOW2, preAllocation,
             template.getSize(), destPool, timeout);
         }
     }
 
     public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk,
-            String name, PhysicalDiskFormat format, long size,
+            String name, PhysicalDiskFormat format, Storage.ImagePreAllocation preAllocation, long size,
             KVMStoragePool destPool) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
-        return adaptor.createTemplateFromDisk(disk, name, format,
+        return adaptor.createTemplateFromDisk(disk, name, format, preAllocation,
                 size, destPool);
     }
 

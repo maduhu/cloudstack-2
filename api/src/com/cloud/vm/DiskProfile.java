@@ -18,6 +18,7 @@ package com.cloud.vm;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 
 /**
@@ -39,6 +40,7 @@ public class DiskProfile {
     private Long bytesWriteRate;
     private Long iopsReadRate;
     private Long iopsWriteRate;
+    private Storage.ImagePreAllocation preAllocation;
 
     private HypervisorType hyperType;
 
@@ -189,5 +191,13 @@ public class DiskProfile {
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public void setPreAllocation(Storage.ImagePreAllocation preAllocation){
+        this.preAllocation = preAllocation;
+    }
+
+    public Storage.ImagePreAllocation getPreAllocation(){
+        return preAllocation;
     }
 }

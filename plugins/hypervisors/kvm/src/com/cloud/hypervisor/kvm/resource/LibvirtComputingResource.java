@@ -1512,7 +1512,7 @@ ServerResource {
                 } else {
                     BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
                     vol = _storagePoolMgr.createDiskFromTemplate(BaseVol,
-                            dskch.getPath(), primaryPool, 0);
+                            dskch.getPath(), dskch.getPreAllocation(), primaryPool, 0);
                 }
                 if (vol == null) {
                     return new Answer(cmd, false,
@@ -1528,6 +1528,7 @@ ServerResource {
             volume.setBytesWriteRate(dskch.getBytesWriteRate());
             volume.setIopsReadRate(dskch.getIopsReadRate());
             volume.setIopsWriteRate(dskch.getIopsWriteRate());
+            volume.setPreAllocation(dskch.getPreAllocation());
             return new CreateAnswer(cmd, volume);
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to create volume: " + e.toString());

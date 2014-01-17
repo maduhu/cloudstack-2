@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.Map;
+
+import com.cloud.storage.Storage;
+import com.cloud.vm.DiskProfile;
 import org.apache.log4j.Logger;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.cloudstack.utils.qemu.QemuImg;
@@ -805,7 +808,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      */
     @Override
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
-            String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
+            String name, PhysicalDiskFormat format, Storage.ImagePreAllocation preAllocation, long size, KVMStoragePool destPool, int timeout) {
 
         String newUuid = name;
         KVMStoragePool srcPool = template.getPool();
@@ -831,7 +834,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     QemuImgFile backingFile = new QemuImgFile(template.getPath(), template.getFormat());
                     QemuImgFile destFile = new QemuImgFile(disk.getPath());
                     QemuImg qemu = new QemuImg(timeout);
-                    qemu.create(destFile, backingFile);
+                    qemu.create(destFile, backingFile, preAllocation);
                 } else if (format == PhysicalDiskFormat.RAW) {
                     QemuImgFile sourceFile = new QemuImgFile(template.getPath(), template.getFormat());
                     QemuImgFile destFile = new QemuImgFile(disk.getPath(), PhysicalDiskFormat.RAW);
@@ -968,7 +971,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk,
-            String name, PhysicalDiskFormat format, long size,
+            String name, PhysicalDiskFormat format, Storage.ImagePreAllocation preAllocation, long size,
             KVMStoragePool destPool) {
         return null;
     }
