@@ -51,7 +51,7 @@ public class Storage {
             this.fileExtension = fileExtension;
         }
 
-        public boolean isSupportThinProvisioning() {
+        public boolean supportThinProvisioning() {
             return supportThinProvisioning;
         }
 
@@ -72,10 +72,10 @@ public class Storage {
 
     }
 
-    public static enum Preallocation {
-        OFF,
-        METADATA,
-        FULL
+    public static enum ProvisioningType {
+        THIN,
+        SPARSE,
+        FAT
     }
 
     public static enum FileSystem {

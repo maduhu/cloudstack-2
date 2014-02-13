@@ -32,6 +32,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -143,6 +144,9 @@ public class VolumeVO implements Volume {
     @Column(name = "format")
     private Storage.ImageFormat format;
 
+    @Column(name = "provisioning_type")
+    private Storage.ProvisioningType provisioningType;
+
     @Column(name = "display_volume", updatable = true, nullable = false)
     protected boolean displayVolume = true;
 
@@ -245,6 +249,7 @@ public class VolumeVO implements Volume {
         templateId = that.getTemplateId();
         deviceId = that.getDeviceId();
         format = that.getFormat();
+        provisioningType = that.getProvisioningType();
         uuid = UUID.randomUUID().toString();
     }
 
@@ -565,7 +570,16 @@ public class VolumeVO implements Volume {
         this.format = format;
     }
 
-    public void setVmSnapshotChainSize(Long vmSnapshotChainSize) {
+    @Override
+    public ProvisioningType getProvisioningType(){
+        return provisioningType;
+    }
+
+    public void setProvisioningType(ProvisioningType provisioningType){
+        this.provisioningType = provisioningType;
+    }
+
+    public void setVmSnapshotChainSize(Long vmSnapshotChainSize){
         this.vmSnapshotChainSize = vmSnapshotChainSize;
     }
 
