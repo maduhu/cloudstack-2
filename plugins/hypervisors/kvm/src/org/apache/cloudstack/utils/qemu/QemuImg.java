@@ -18,9 +18,11 @@ package org.apache.cloudstack.utils.qemu;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.cloud.storage.Storage;
 
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang.NotImplementedException;
 
 public class QemuImg {
 
@@ -40,6 +42,35 @@ public class QemuImg {
         @Override
         public String toString() {
             return this.format;
+        }
+    }
+
+    public static enum Preallocation {
+        Off("off"),
+        Metadata("metadata"),
+        Full("full");
+
+        private String preallocation;
+
+        private Preallocation(String preallocation){
+            this.preallocation = preallocation;
+        }
+
+        public String toString(){
+            return this.preallocation;
+        }
+
+        public Preallocation fromProvisioningType(Storage.ProvisioningType provisioningType){
+            switch (provisioningType){
+                case THIN:
+                    return Preallocation.Off;
+                case SPARSE:
+                    return Preallocation.Metadata;
+                case FAT:
+                    return Preallocation.Full;
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 

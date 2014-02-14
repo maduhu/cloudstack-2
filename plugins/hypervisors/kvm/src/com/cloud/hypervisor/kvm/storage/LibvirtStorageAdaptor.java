@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.HashMap;
 
 
 import org.apache.commons.codec.binary.Base64;
@@ -832,7 +833,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         destFile.setSize(template.getVirtualSize());
                     }
                     QemuImg qemu = new QemuImg(timeout);
-                    qemu.create(destFile, backingFile);
+                    Map<String, String> options = new HashMap<String, String>();
+                    qemu.create(destFile, backingFile, options);
                 } else if (format == PhysicalDiskFormat.RAW) {
                     QemuImgFile sourceFile = new QemuImgFile(template.getPath(), template.getFormat());
                     QemuImgFile destFile = new QemuImgFile(disk.getPath(), PhysicalDiskFormat.RAW);
