@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.HashMap;
 
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -620,8 +621,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, PhysicalDiskFormat format, long size) {
-        LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
+            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+        LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         StoragePool virtPool = libvirtPool.getPool();
         LibvirtStorageVolumeDef.volFormat libvirtformat = null;
 
@@ -680,7 +682,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(name, size, libvirtformat, null, null);
             s_logger.debug(volDef.toString());
             try {
-                StorageVol vol = virtPool.storageVolCreateXML(volDef.toString(), 0);
+                int virStorageVolCreateFlags;
+                switch (provisioningType){
+                    case THIN:
+                        virStorageVolCreateFlags = 0;
+                        break;
+                    case SPARSE:
+                        virStorageVolCreateFlags = 1;
+                        break;
+                    case FAT:
+                        virStorageVolCreateFlags = 2;
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+                StorageVol vol = virtPool.storageVolCreateXML(volDef.toString(), virStorageVolCreateFlags);
                 volPath = vol.getPath();
                 volName = vol.getName();
                 volAllocation = vol.getInfo().allocation;
@@ -814,10 +830,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             So for RBD we don't create the image, but let qemu-img do that for us.
 
             We then create a KVMPhysicalDisk object that we can return
-         */
+        */
         try {
             if (destPool.getType() != StoragePoolType.RBD) {
-                disk = destPool.createPhysicalDisk(newUuid, format, template.getVirtualSize());
+                disk = destPool.createPhysicalDisk(newUuid, format, provisioningType, template.getVirtualSize());
                 if (template.getFormat() == PhysicalDiskFormat.TAR) {
                     Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath(), timeout); // TO BE FIXED to aware provisioningType
                 } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
@@ -1037,13 +1053,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         s_logger.debug("copyPhysicalDisk: disk size:" + disk.getSize() + ", virtualsize:" + disk.getVirtualSize()+" format:"+disk.getFormat());
         if (destPool.getType() != StoragePoolType.RBD) {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
-                newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, disk.getVirtualSize());
+                newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize());
             } else {
                 /* If the source device is on a RBD storage pool force the new disk to the same format (RAW) */
                 if (srcPool.getType() != StoragePoolType.RBD) {
-                    newDisk = destPool.createPhysicalDisk(name, disk.getVirtualSize());
+                    newDisk = destPool.createPhysicalDisk(name, Storage.ProvisioningType.THIN, disk.getVirtualSize());
                 } else {
-                    newDisk = destPool.createPhysicalDisk(name, sourceFormat, disk.getVirtualSize());
+                    newDisk = destPool.createPhysicalDisk(name, sourceFormat, Storage.ProvisioningType.THIN, disk.getVirtualSize());
                 }
             }
         } else {

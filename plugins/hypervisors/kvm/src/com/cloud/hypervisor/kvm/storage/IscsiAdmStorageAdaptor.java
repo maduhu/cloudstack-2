@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.storage.Storage;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -64,7 +65,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     // called from LibvirtComputingResource.execute(CreateCommand)
     // does not apply for iScsiAdmStorageAdaptor
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
 

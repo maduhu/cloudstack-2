@@ -36,7 +36,8 @@ public interface StorageAdaptor {
 
     public boolean deleteStoragePool(String uuid);
 
-    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, PhysicalDiskFormat format, long size);
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
+            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size);
 
     // given disk path (per database) and pool, prepare disk on host
     public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details);
