@@ -167,12 +167,15 @@ public class VolumeVO implements Volume {
     Integer hypervisorSnapshotReserve;
 
     // Real Constructor
-    public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size, Long minIops, Long maxIops, String iScsiName) {
-        volumeType = type;
+    public VolumeVO(Type type, String name, long dcId, long domainId,
+            long accountId, long diskOfferingId, Storage.ProvisioningType provisioningType, long size,
+            Long minIops, Long maxIops, String iScsiName) {
+        this.volumeType = type;
         this.name = name;
         dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
+        this.provisioningType = provisioningType;
         this.size = size;
         this.minIops = minIops;
         this.maxIops = maxIops;
@@ -182,14 +185,17 @@ public class VolumeVO implements Volume {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Long minIops,
-            Long maxIops, String iScsiName, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, Long podId, long accountId,
+            long domainId, Long instanceId, String folder, String path, Storage.ProvisioningType provisioningType,
+            long size, Long minIops, Long maxIops, String iScsiName,
+            Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
         this.instanceId = instanceId;
         this.folder = folder;
         this.path = path;
+        this.provisioningType = provisioningType;
         this.size = size;
         this.minIops = minIops;
         this.maxIops = maxIops;
@@ -202,13 +208,16 @@ public class VolumeVO implements Volume {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, long podId, long accountId,
+            long domainId, Long instanceId, String folder, String path, Storage.ProvisioningType provisioningType,
+            long size, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
         this.instanceId = instanceId;
         this.folder = folder;
         this.path = path;
+        this.provisioningType = provisioningType;
         this.size = size;
         minIops = null;
         maxIops = null;
@@ -231,6 +240,7 @@ public class VolumeVO implements Volume {
             that.getInstanceId(),
             that.getFolder(),
             that.getPath(),
+            that.getProvisioningType(),
             that.getSize(),
             that.getMinIops(),
             that.getMaxIops(),
