@@ -623,6 +623,27 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+
+        if (pool.getType() == StoragePoolType.RBD) {
+            return createPhysicalDiskOnRBD(name, pool, format, provisioningType, size);
+        } else {
+            switch (format){
+                case QCOW2:
+                    return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                case RAW:
+                    return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                case DIR:
+                    return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                case TAR:
+                    return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+    }
+
+    private KVMPhysicalDisk createPhysicalDiskByLibVirt(String name, KVMStoragePool pool,
+                                                        PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         StoragePool virtPool = libvirtPool.getPool();
         LibvirtStorageVolumeDef.volFormat libvirtformat = null;
@@ -632,6 +653,43 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         long volAllocation = 0;
         long volCapacity = 0;
 
+        if (format == PhysicalDiskFormat.DIR) {
+            libvirtformat = LibvirtStorageVolumeDef.volFormat.DIR;
+        } else if (format == PhysicalDiskFormat.TAR) {
+            libvirtformat = LibvirtStorageVolumeDef.volFormat.TAR;
+        }
+
+        LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(name,
+                size, libvirtformat, null, null);
+        s_logger.debug(volDef.toString());
+        try {
+            StorageVol vol = virtPool.storageVolCreateXML(volDef.toString(), 0);
+            volPath = vol.getPath();
+            volName = vol.getName();
+            volAllocation = vol.getInfo().allocation;
+            volCapacity = vol.getInfo().capacity;
+        } catch (LibvirtException e) {
+            throw new CloudRuntimeException(e.toString());
+        }
+
+        KVMPhysicalDisk disk = new KVMPhysicalDisk(volPath, volName, pool);
+        disk.setFormat(format);
+        disk.setSize(volAllocation);
+        disk.setVirtualSize(volCapacity);
+        return disk;
+    }
+
+
+    private KVMPhysicalDisk createPhysicalDiskByQemuImg(String name, KVMStoragePool pool,
+                                                    PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+        throw new NotImplementedException();
+    }
+
+    private KVMPhysicalDisk createPhysicalDiskOnRBD(String name, KVMStoragePool pool,
+                                               PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+        LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
+        String volPath = null;
+
         /**
          * To have RBD function properly we want RBD images of format 2
          * libvirt currently defaults to format 1
@@ -639,77 +697,34 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          * For that reason we use the native RBD bindings to create the
          * RBD image until libvirt creates RBD format 2 by default
          */
-        if (pool.getType() == StoragePoolType.RBD) {
-            format = PhysicalDiskFormat.RAW;
+        format = PhysicalDiskFormat.RAW;
 
-            try {
-                s_logger.info("Creating RBD image " + pool.getSourceDir() + "/" + name + " with size " + size);
+        try {
+            s_logger.info("Creating RBD image " + pool.getSourceDir() + "/" + name + " with size " + size);
 
-                Rados r = new Rados(pool.getAuthUserName());
-                r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-                r.confSet("key", pool.getAuthSecret());
-                r.confSet("client_mount_timeout", "30");
-                r.connect();
-                s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+            Rados r = new Rados(pool.getAuthUserName());
+            r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+            r.confSet("key", pool.getAuthSecret());
+            r.confSet("client_mount_timeout", "30");
+            r.connect();
+            s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
-                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
-                Rbd rbd = new Rbd(io);
-                rbd.create(name, size, rbdFeatures, rbdOrder);
+            IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+            Rbd rbd = new Rbd(io);
+            rbd.create(name, size, this.rbdFeatures, this.rbdOrder);
 
-                r.ioCtxDestroy(io);
-            } catch (RadosException e) {
-                throw new CloudRuntimeException(e.toString());
-            } catch (RbdException e) {
-                throw new CloudRuntimeException(e.toString());
-            }
-
-            volPath = pool.getSourceDir() + "/" + name;
-            volName = name;
-            volCapacity = size;
-            volAllocation = size;
-        } else {
-
-            if (format == PhysicalDiskFormat.QCOW2) {
-                libvirtformat = LibvirtStorageVolumeDef.volFormat.QCOW2;
-            } else if (format == PhysicalDiskFormat.RAW) {
-                libvirtformat = LibvirtStorageVolumeDef.volFormat.RAW;
-            } else if (format == PhysicalDiskFormat.DIR) {
-                libvirtformat = LibvirtStorageVolumeDef.volFormat.DIR;
-            } else if (format == PhysicalDiskFormat.TAR) {
-                libvirtformat = LibvirtStorageVolumeDef.volFormat.TAR;
-            }
-
-            LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(name, size, libvirtformat, null, null);
-            s_logger.debug(volDef.toString());
-            try {
-                int virStorageVolCreateFlags;
-                switch (provisioningType){
-                    case THIN:
-                        virStorageVolCreateFlags = 0;
-                        break;
-                    case SPARSE:
-                        virStorageVolCreateFlags = 1;
-                        break;
-                    case FAT:
-                        virStorageVolCreateFlags = 2;
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
-                StorageVol vol = virtPool.storageVolCreateXML(volDef.toString(), virStorageVolCreateFlags);
-                volPath = vol.getPath();
-                volName = vol.getName();
-                volAllocation = vol.getInfo().allocation;
-                volCapacity = vol.getInfo().capacity;
-            } catch (LibvirtException e) {
-                throw new CloudRuntimeException(e.toString());
-            }
+            r.ioCtxDestroy(io);
+        } catch (RadosException e) {
+            throw new CloudRuntimeException(e.toString());
+        } catch (RbdException e) {
+            throw new CloudRuntimeException(e.toString());
         }
 
-        KVMPhysicalDisk disk = new KVMPhysicalDisk(volPath, volName, pool);
+        volPath = pool.getSourceDir() + "/" + name;
+        KVMPhysicalDisk disk = new KVMPhysicalDisk(volPath, name, pool);
         disk.setFormat(format);
-        disk.setSize(volAllocation);
-        disk.setVirtualSize(volCapacity);
+        disk.setSize(size);
+        disk.setVirtualSize(size);
         return disk;
     }
 
