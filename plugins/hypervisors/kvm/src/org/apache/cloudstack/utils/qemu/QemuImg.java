@@ -60,7 +60,7 @@ public class QemuImg {
             return this.preallocation;
         }
 
-        public Preallocation fromProvisioningType(Storage.ProvisioningType provisioningType){
+        public static Preallocation fromProvisioningType(Storage.ProvisioningType provisioningType){
             switch (provisioningType){
                 case THIN:
                     return Preallocation.Off;

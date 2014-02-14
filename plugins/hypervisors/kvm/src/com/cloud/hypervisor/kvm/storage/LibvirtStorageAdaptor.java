@@ -819,11 +819,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             if (destPool.getType() != StoragePoolType.RBD) {
                 disk = destPool.createPhysicalDisk(newUuid, format, template.getVirtualSize());
                 if (template.getFormat() == PhysicalDiskFormat.TAR) {
-                    Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath(), timeout);
+                    Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath(), timeout); // TO BE FIXED to aware provisioningType
                 } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
                     Script.runSimpleBashScript("mkdir -p " + disk.getPath());
                     Script.runSimpleBashScript("chmod 755 " + disk.getPath());
-                    Script.runSimpleBashScript("cp -p -r " + template.getPath() + "/* " + disk.getPath(), timeout);
+                    Script.runSimpleBashScript("cp -p -r " + template.getPath() + "/* " + disk.getPath(), timeout); // TO BE FIXED to aware provisioningType
                 } else if (format == PhysicalDiskFormat.QCOW2) {
                     QemuImgFile backingFile = new QemuImgFile(template.getPath(), template.getFormat());
                     QemuImgFile destFile = new QemuImgFile(disk.getPath());
@@ -834,6 +834,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     QemuImg qemu = new QemuImg(timeout);
                     Map<String, String> options = new HashMap<String, String>();
+                    options.put("preallocation", QemuImg.Preallocation.fromProvisioningType(provisioningType).toString());
                     qemu.create(destFile, backingFile, options);
                 } else if (format == PhysicalDiskFormat.RAW) {
                     QemuImgFile sourceFile = new QemuImgFile(template.getPath(), template.getFormat());
@@ -844,7 +845,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         destFile.setSize(template.getVirtualSize());
                     }
                     QemuImg qemu = new QemuImg(timeout);
-                    qemu.convert(sourceFile, destFile);
+                    Map<String, String> options = new HashMap<String, String>();
+                    options.put("preallocation", QemuImg.Preallocation.fromProvisioningType(provisioningType).toString());
+                    qemu.convert(sourceFile, destFile, options);
                 }
             } else {
                 format = PhysicalDiskFormat.RAW;
