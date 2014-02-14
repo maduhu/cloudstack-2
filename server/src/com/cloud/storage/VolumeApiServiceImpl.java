@@ -397,6 +397,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
         DiskOfferingVO diskOffering = null;
+        Storage.ProvisioningType provisioningType = Storage.ProvisioningType.SPARSE;
         Long size = null;
         Long minIops = null;
         Long maxIops = null;
@@ -557,18 +558,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             userSpecifiedName = getRandomVolumeName();
         }
 
-        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolume, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName,
-                _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
+        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolume, zoneId, diskOfferingId, provisioningType, size,
+                minIops, maxIops, parentVolume, userSpecifiedName, _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
 
         return volume;
     }
 
-    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolume, final Long zoneId,
-            final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid) {
+    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolume,
+            final Long zoneId, final Long diskOfferingId, final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume,
+            final String userSpecifiedName, final String uuid) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, Storage.ProvisioningType.THIN, 0, Volume.Type.DATADISK);
+        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, provisioningType, 0, Volume.Type.DATADISK);
         volume.setPoolId(null);
                 volume.setUuid(uuid);
         volume.setDataCenterId(zoneId);
