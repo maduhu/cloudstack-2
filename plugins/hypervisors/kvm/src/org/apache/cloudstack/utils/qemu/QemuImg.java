@@ -45,29 +45,29 @@ public class QemuImg {
         }
     }
 
-    public static enum Preallocation {
+    public static enum PreallocationType {
         Off("off"),
         Metadata("metadata"),
         Full("full");
 
-        private String preallocation;
+        private String preallocationType;
 
-        private Preallocation(String preallocation){
-            this.preallocation = preallocation;
+        private PreallocationType(String preallocationType){
+            this.preallocationType = preallocationType;
         }
 
         public String toString(){
-            return this.preallocation;
+            return this.preallocationType;
         }
 
-        public static Preallocation fromProvisioningType(Storage.ProvisioningType provisioningType){
+        public static PreallocationType getPreallocationType(Storage.ProvisioningType provisioningType){
             switch (provisioningType){
                 case THIN:
-                    return Preallocation.Off;
+                    return PreallocationType.Off;
                 case SPARSE:
-                    return Preallocation.Metadata;
+                    return PreallocationType.Metadata;
                 case FAT:
-                    return Preallocation.Full;
+                    return PreallocationType.Full;
                 default:
                     throw new NotImplementedException();
             }
