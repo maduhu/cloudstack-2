@@ -857,19 +857,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
             String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout) {
 
-        String newUuid = name;
-        KVMStoragePool srcPool = template.getPool();
         KVMPhysicalDisk disk = null;
 
-        /*
-            With RBD you can't run qemu-img convert with an existing RBD image as destination
-            qemu-img will exit with the error that the destination already exists.
-            So for RBD we don't create the image, but let qemu-img do that for us.
-
-            We then create a KVMPhysicalDisk object that we can return
-        */
-        try {
-            if (destPool.getType() != StoragePoolType.RBD) {
+        if (destPool.getType() == StoragePoolType.RBD) {
+            disk = createDiskFromTemplateOnRBD(template, name, format, provisioningType, size, destPool, timeout);
+        } else {
+            try {
+                String newUuid = name;
                 disk = destPool.createPhysicalDisk(newUuid, format, provisioningType, template.getVirtualSize());
                 if (template.getFormat() == PhysicalDiskFormat.TAR) {
                     Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath(), timeout); // TO BE FIXED to aware provisioningType
@@ -911,141 +905,164 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     options.put("preallocation", QemuImg.PreallocationType.getPreallocationType(provisioningType).toString());
                     qemu.convert(sourceFile, destFile, options);
                 }
-            } else {
-                format = PhysicalDiskFormat.RAW;
-                disk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + newUuid, newUuid, destPool);
-                disk.setFormat(format);
-                if (size > template.getVirtualSize()) {
-                    disk.setSize(size);
-                    disk.setVirtualSize(size);
-                } else {
-                    // leave these as they were if size isn't applicable
-                    disk.setSize(template.getVirtualSize());
-                    disk.setVirtualSize(disk.getSize());
-                }
-
-                QemuImg qemu = new QemuImg(timeout);
-                QemuImgFile srcFile;
-                QemuImgFile destFile =
-                        new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthUserName(),
-                                destPool.getAuthSecret(), disk.getPath()));
-                destFile.setFormat(format);
-                if (size > template.getVirtualSize()) {
-                    destFile.setSize(size);
-                } else {
-                    destFile.setSize(template.getVirtualSize());
-                }
-
-                if (srcPool.getType() != StoragePoolType.RBD) {
-                    srcFile = new QemuImgFile(template.getPath(), template.getFormat());
-                    qemu.convert(srcFile, destFile);
-                } else {
-
-                    /**
-                     * We have to find out if the source file is in the same RBD pool and has
-                     * RBD format 2 before we can do a layering/clone operation on the RBD image
-                     *
-                     * This will be the case when the template is already on Primary Storage and
-                     * we want to copy it
-                     */
-
-                    try {
-                        if ((srcPool.getSourceHost().equals(destPool.getSourceHost())) && (srcPool.getSourceDir().equals(destPool.getSourceDir()))) {
-                            /* We are on the same Ceph cluster, but we require RBD format 2 on the source image */
-                            s_logger.debug("Trying to perform a RBD clone (layering) since we are operating in the same storage pool");
-
-                            Rados r = new Rados(srcPool.getAuthUserName());
-                            r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
-                            r.confSet("key", srcPool.getAuthSecret());
-                            r.confSet("client_mount_timeout", "30");
-                            r.connect();
-                            s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
-
-                            IoCTX io = r.ioCtxCreate(srcPool.getSourceDir());
-                            Rbd rbd = new Rbd(io);
-                            RbdImage srcImage = rbd.open(template.getName());
-
-                            if (srcImage.isOldFormat()) {
-                                /* The source image is RBD format 1, we have to do a regular copy */
-                                s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
-                                        " is RBD format 1. We have to perform a regular copy (" + disk.getVirtualSize() + " bytes)");
-
-                                rbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
-                                RbdImage destImage = rbd.open(disk.getName());
-
-                                s_logger.debug("Starting to copy " + srcImage.getName() + " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
-                                rbd.copy(srcImage, destImage);
-
-                                s_logger.debug("Finished copying " + srcImage.getName() + " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
-                                rbd.close(destImage);
-                            } else {
-                                s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
-                                        " is RBD format 2. We will perform a RBD clone using snapshot " + rbdTemplateSnapName);
-                                /* The source image is format 2, we can do a RBD snapshot+clone (layering) */
-                                rbd.clone(template.getName(), rbdTemplateSnapName, io, disk.getName(), rbdFeatures, rbdOrder);
-                                s_logger.debug("Succesfully cloned " + template.getName() + "@" + rbdTemplateSnapName + " to " + disk.getName());
-                            }
-
-                            rbd.close(srcImage);
-                            r.ioCtxDestroy(io);
-                        } else {
-                            /* The source pool or host is not the same Ceph cluster, we do a simple copy with Qemu-Img */
-                            s_logger.debug("Both the source and destination are RBD, but not the same Ceph cluster. Performing a copy");
-
-                            Rados rSrc = new Rados(srcPool.getAuthUserName());
-                            rSrc.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
-                            rSrc.confSet("key", srcPool.getAuthSecret());
-                            rSrc.confSet("client_mount_timeout", "30");
-                            rSrc.connect();
-                            s_logger.debug("Succesfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
-
-                            Rados rDest = new Rados(destPool.getAuthUserName());
-                            rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
-                            rDest.confSet("key", destPool.getAuthSecret());
-                            rDest.confSet("client_mount_timeout", "30");
-                            rDest.connect();
-                            s_logger.debug("Succesfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
-
-                            IoCTX sIO = rSrc.ioCtxCreate(srcPool.getSourceDir());
-                            Rbd sRbd = new Rbd(sIO);
-
-                            IoCTX dIO = rDest.ioCtxCreate(destPool.getSourceDir());
-                            Rbd dRbd = new Rbd(dIO);
-
-                            s_logger.debug("Creating " + disk.getName() + " on the destination cluster " + rDest.confGet("mon_host") + " in pool " +
-                                    destPool.getSourceDir());
-                            dRbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
-
-                            RbdImage srcImage = sRbd.open(template.getName());
-                            RbdImage destImage = dRbd.open(disk.getName());
-
-                            s_logger.debug("Copying " + template.getName() + " from Ceph cluster " + rSrc.confGet("mon_host") + " to " + disk.getName() + " on cluster " +
-                                    rDest.confGet("mon_host"));
-                            sRbd.copy(srcImage, destImage);
-
-                            sRbd.close(srcImage);
-                            dRbd.close(destImage);
-
-                            rSrc.ioCtxDestroy(sIO);
-                            rDest.ioCtxDestroy(dIO);
-                        }
-                    } catch (RadosException e) {
-                        s_logger.error("Failed to perform a RADOS action on the Ceph cluster, the error was: " + e.getMessage());
-                        disk = null;
-                    } catch (RbdException e) {
-                        s_logger.error("Failed to perform a RBD action on the Ceph cluster, the error was: " + e.getMessage());
-                        disk = null;
-                    }
-                }
+            } catch (QemuImgException e) {
+                s_logger.error("Failed to create " + disk.getPath() +
+                        " due to a failed executing of qemu-img: " + e.getMessage());
             }
-        } catch (QemuImgException e) {
-            s_logger.error("Failed to create " + disk.getPath() + " due to a failed executing of qemu-img: " + e.getMessage());
         }
 
         if (disk == null) {
             throw new CloudRuntimeException("Failed to create disk from template " + template.getName());
         }
 
+        return disk;
+    }
+
+    private KVMPhysicalDisk createDiskFromTemplateOnRBD(KVMPhysicalDisk template,
+            String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout){
+
+        /*
+            With RBD you can't run qemu-img convert with an existing RBD image as destination
+            qemu-img will exit with the error that the destination already exists.
+            So for RBD we don't create the image, but let qemu-img do that for us.
+
+            We then create a KVMPhysicalDisk object that we can return
+        */
+
+        KVMStoragePool srcPool = template.getPool();
+        KVMPhysicalDisk disk = null;
+        String newUuid = name;
+
+        format = PhysicalDiskFormat.RAW;
+        disk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + newUuid, newUuid, destPool);
+        disk.setFormat(format);
+        if (size > template.getVirtualSize()) {
+            disk.setSize(size);
+            disk.setVirtualSize(size);
+        } else {
+            // leave these as they were if size isn't applicable
+            disk.setSize(template.getVirtualSize());
+            disk.setVirtualSize(disk.getSize());
+        }
+
+
+        QemuImg qemu = new QemuImg(timeout);
+        QemuImgFile srcFile;
+        QemuImgFile destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
+                destPool.getSourcePort(),
+                destPool.getAuthUserName(),
+                destPool.getAuthSecret(),
+                disk.getPath()));
+        destFile.setFormat(format);
+
+
+        if (srcPool.getType() != StoragePoolType.RBD) {
+            srcFile = new QemuImgFile(template.getPath(), template.getFormat());
+            try{
+                qemu.convert(srcFile, destFile);
+            } catch (QemuImgException e) {
+                s_logger.error("Failed to create " + disk.getPath() +
+                        " due to a failed executing of qemu-img: " + e.getMessage());
+            }
+        } else {
+
+            /**
+             * We have to find out if the source file is in the same RBD pool and has
+             * RBD format 2 before we can do a layering/clone operation on the RBD image
+             *
+             * This will be the case when the template is already on Primary Storage and
+             * we want to copy it
+             */
+
+            try {
+                if ((srcPool.getSourceHost().equals(destPool.getSourceHost())) && (srcPool.getSourceDir().equals(destPool.getSourceDir()))) {
+                            /* We are on the same Ceph cluster, but we require RBD format 2 on the source image */
+                    s_logger.debug("Trying to perform a RBD clone (layering) since we are operating in the same storage pool");
+
+                    Rados r = new Rados(srcPool.getAuthUserName());
+                    r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+                    r.confSet("key", srcPool.getAuthSecret());
+                    r.confSet("client_mount_timeout", "30");
+                    r.connect();
+                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+
+                    IoCTX io = r.ioCtxCreate(srcPool.getSourceDir());
+                    Rbd rbd = new Rbd(io);
+                    RbdImage srcImage = rbd.open(template.getName());
+
+                    if (srcImage.isOldFormat()) {
+                                /* The source image is RBD format 1, we have to do a regular copy */
+                        s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
+                                " is RBD format 1. We have to perform a regular copy (" + disk.getVirtualSize() + " bytes)");
+
+                        rbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
+                        RbdImage destImage = rbd.open(disk.getName());
+
+                        s_logger.debug("Starting to copy " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
+                        rbd.copy(srcImage, destImage);
+
+                        s_logger.debug("Finished copying " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
+                        rbd.close(destImage);
+                    } else {
+                        s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName()
+                                + " is RBD format 2. We will perform a RBD clone using snapshot "
+                                + this.rbdTemplateSnapName);
+                                /* The source image is format 2, we can do a RBD snapshot+clone (layering) */
+                        rbd.clone(template.getName(), this.rbdTemplateSnapName, io, disk.getName(), this.rbdFeatures, this.rbdOrder);
+                        s_logger.debug("Succesfully cloned " + template.getName() + "@" + this.rbdTemplateSnapName + " to " + disk.getName());
+                    }
+
+                    rbd.close(srcImage);
+                    r.ioCtxDestroy(io);
+                } else {
+                            /* The source pool or host is not the same Ceph cluster, we do a simple copy with Qemu-Img */
+                    s_logger.debug("Both the source and destination are RBD, but not the same Ceph cluster. Performing a copy");
+
+                    Rados rSrc = new Rados(srcPool.getAuthUserName());
+                    rSrc.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+                    rSrc.confSet("key", srcPool.getAuthSecret());
+                    rSrc.confSet("client_mount_timeout", "30");
+                    rSrc.connect();
+                    s_logger.debug("Succesfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
+
+                    Rados rDest = new Rados(destPool.getAuthUserName());
+                    rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+                    rDest.confSet("key", destPool.getAuthSecret());
+                    rDest.confSet("client_mount_timeout", "30");
+                    rDest.connect();
+                    s_logger.debug("Succesfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
+
+                    IoCTX sIO = rSrc.ioCtxCreate(srcPool.getSourceDir());
+                    Rbd sRbd = new Rbd(sIO);
+
+                    IoCTX dIO = rDest.ioCtxCreate(destPool.getSourceDir());
+                    Rbd dRbd = new Rbd(dIO);
+
+                    s_logger.debug("Creating " + disk.getName() + " on the destination cluster " + rDest.confGet("mon_host") + " in pool " +
+                            destPool.getSourceDir());
+                    dRbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
+
+                    RbdImage srcImage = sRbd.open(template.getName());
+                    RbdImage destImage = dRbd.open(disk.getName());
+
+                    s_logger.debug("Copying " + template.getName() + " from Ceph cluster " + rSrc.confGet("mon_host") + " to " + disk.getName()
+                            + " on cluster " + rDest.confGet("mon_host"));
+                    sRbd.copy(srcImage, destImage);
+
+                    sRbd.close(srcImage);
+                    dRbd.close(destImage);
+
+                    rSrc.ioCtxDestroy(sIO);
+                    rDest.ioCtxDestroy(dIO);
+                }
+            } catch (RadosException e) {
+                s_logger.error("Failed to perform a RADOS action on the Ceph cluster, the error was: " + e.getMessage());
+                disk = null;
+            } catch (RbdException e) {
+                s_logger.error("Failed to perform a RBD action on the Ceph cluster, the error was: " + e.getMessage());
+                disk = null;
+            }
+        }
         return disk;
     }
 
