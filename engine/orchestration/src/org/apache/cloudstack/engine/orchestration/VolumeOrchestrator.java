@@ -659,7 +659,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             owner.getDomainId(),
             owner.getId(),
             offering.getId(),
-            Storage.ProvisioningType.THIN, // TO BE FIXED
+            Storage.ProvisioningType.SPARSE, // TO BE FIXED
             size,
             minIops,
             maxIops,
