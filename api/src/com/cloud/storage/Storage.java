@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import org.apache.commons.lang.NotImplementedException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,9 +75,32 @@ public class Storage {
     }
 
     public static enum ProvisioningType {
-        THIN,
-        SPARSE,
-        FAT
+        THIN("thin"),
+        SPARSE("sparse"),
+        FAT("fat");
+
+        private String provisionType;
+
+        private ProvisioningType(String provisionType){
+            this.provisionType = provisionType;
+        }
+
+        public String toString(){
+            return this.provisionType;
+        }
+
+        public static ProvisioningType getProvisioningType(String provisioningType){
+
+            if(provisioningType.equals("thin")){
+                return ProvisioningType.THIN;
+            } else if(provisioningType.equals("sparse")){
+                return ProvisioningType.SPARSE;
+            } else if (provisioningType.equals("fat")){
+                return ProvisioningType.FAT;
+            } else{
+                    throw new NotImplementedException();
+            }
+        }
     }
 
     public static enum FileSystem {

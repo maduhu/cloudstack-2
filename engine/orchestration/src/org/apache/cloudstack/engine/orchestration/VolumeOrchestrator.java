@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -64,6 +65,7 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.deploy.DataCenterDeployment;
@@ -153,6 +155,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     SnapshotService _snapshotSrv;
     @Inject
     protected UserVmDao _userVmDao;
+    @Inject
+    protected ConfigurationDao _configDao;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -653,13 +657,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         minIops = minIops != null ? minIops : offering.getMinIops();
         maxIops = maxIops != null ? maxIops : offering.getMaxIops();
 
+        Storage.ProvisioningType provisioningType = Storage.ProvisioningType.getProvisioningType(_configDao.getValue(Config.VolumeProvisioningType.key()));
         VolumeVO vol = new VolumeVO(type,
             name,
             vm.getDataCenterId(),
             owner.getDomainId(),
             owner.getId(),
             offering.getId(),
-            Storage.ProvisioningType.SPARSE, // TO BE FIXED
+            provisioningType,
             size,
             minIops,
             maxIops,
