@@ -27,4 +27,5 @@ INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, 
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'Off' COMMENT 'pre allocation setting of the volume';
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Storage", 'DEFAULT', 'management-server', "storage.volume.provisioningtype", "thin", "Provisioning type used to create volumes. Valid values are thin, sparse, fat.", "thin", NULL,NULL,0);
-
+j
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'Off' COMMENT 'pre allocation setting of the volume';

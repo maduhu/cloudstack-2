@@ -19,6 +19,7 @@ package org.apache.cloudstack.utils.qemu;
 import java.util.Map;
 import com.cloud.storage.Storage;
 
+import com.cloud.utils.script.Script;
 import com.cloud.utils.script.OutputInterpreter;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
