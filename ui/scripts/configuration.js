@@ -95,6 +95,28 @@
                                             });
                                         }
                                     },
+                                    provisioningType: {
+                                        label: 'label.disk.provisioningtype',
+                                        docID: 'helpComputeOfferingProvisioningType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'thin',
+                                                description: 'thin'
+                                            });
+                                            items.push({
+                                                id: 'sparse',
+                                                description: 'sparse'
+                                            });
+                                            items.push({
+                                                id: 'fat',
+                                                description: 'fat'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
                                     isCustomized: {
                                         label: 'label.custom',                                       
                                         isBoolean: true,
@@ -461,7 +483,8 @@
                                     name: args.data.name,
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
-                                    customized: (args.data.isCustomized == "on")                                    
+                                    provisioningType :args.data.provisioningType,
+                                    customized: (args.data.isCustomized == "on")
                                 };
                                 
                                 //custom fields (begin)
@@ -726,6 +749,9 @@
                                     storagetype: {
                                         label: 'label.storage.type'
                                     },
+                                    provisioningtype: {
+                                        label: 'label.disk.provisioningtype'
+                                    },
                                     cpunumber: {
                                         label: 'label.num.cpu.cores'
                                     },
@@ -942,6 +968,28 @@
                                             });
                                         }
                                     },
+                                    provisioningType: {
+                                        label: 'label.disk.provisioningtype',
+                                        docID: 'helpDiskOfferingProvisioningType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'thin',
+                                                description: 'thin'
+                                            });
+                                            items.push({
+                                                id: 'sparse',
+                                                description: 'sparse'
+                                            });
+                                            items.push({
+                                                id: 'fat',
+                                                description: 'fat'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
                                         docID: 'helpSystemOfferingCPUCores',
@@ -1069,6 +1117,7 @@
                                     displaytext: args.data.description,
                                     systemvmtype: args.data.systemvmtype,
                                     storageType: args.data.storageType,
+                                    provisioningType: args.data.provisioningType,
                                     cpuNumber: args.data.cpuNumber,
                                     cpuSpeed: args.data.cpuSpeed,
                                     memory: args.data.memory
@@ -1276,6 +1325,9 @@
                                     storagetype: {
                                         label: 'label.storage.type'
                                     },
+                                    provisioningtype: {
+                                        label: 'label.disk.provisioningtype'
+                                    },
                                     cpunumber: {
                                         label: 'label.num.cpu.cores'
                                     },
@@ -1446,6 +1498,28 @@
                                             items.push({
                                                 id: 'local',
                                                 description: 'local'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    provisioningType: {
+                                        label: 'label.disk.provisioningtype',
+                                        docID: 'helpDiskOfferingProvisioningType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'thin',
+                                                description: 'thin'
+                                            });
+                                            items.push({
+                                                id: 'sparse',
+                                                description: 'sparse'
+                                            });
+                                            items.push({
+                                                id: 'fat',
+                                                description: 'fat'
                                             });
                                             args.response.success({
                                                 data: items
@@ -1676,6 +1750,7 @@
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
                                     cacheMode: args.data.cacheMode,
+                                    provisioningType: args.data.provisioningType,
                                     customized: (args.data.isCustomized == "on")
                                 };
 
@@ -1922,6 +1997,9 @@
                                     },
                                     storagetype: {
                                         label: 'label.storage.type'
+                                    },
+                                    provisioningtype: {
+                                        label: 'label.disk.provisioningtype'
                                     }
                                 }],
 
