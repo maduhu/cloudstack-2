@@ -25,11 +25,8 @@
 INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('NetworkManager', 'DEFAULT', 'management-server', 'network.router.EnableServiceMonitoring', 'true', 'service monitoring in router enable/disable option, default true', 'true') ON DUPLICATE KEY UPDATE category='NetworkManager';
 
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'Off' COMMENT 'pre allocation setting of the volume';
-
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Storage", 'DEFAULT', 'management-server', "storage.volume.provisioningtype", "thin", "Provisioning type used to create volumes. Valid values are thin, sparse, fat.", "thin", NULL,NULL,0);
-j
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'Off' COMMENT 'pre allocation setting of the volume';
-
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
