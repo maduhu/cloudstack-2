@@ -570,43 +570,43 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, provisioningType, 0, Volume.Type.DATADISK);
-        volume.setPoolId(null);
+                VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, provisioningType, 0, Volume.Type.DATADISK);
+                volume.setPoolId(null);
                 volume.setUuid(uuid);
-        volume.setDataCenterId(zoneId);
-        volume.setPodId(null);
-        volume.setAccountId(ownerId);
-        volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
-        volume.setDiskOfferingId(diskOfferingId);
-        volume.setSize(size);
-        volume.setMinIops(minIops);
-        volume.setMaxIops(maxIops);
-        volume.setInstanceId(null);
-        volume.setUpdated(new Date());
-        volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
+                volume.setDataCenterId(zoneId);
+                volume.setPodId(null);
+                volume.setAccountId(ownerId);
+                volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
+                volume.setDiskOfferingId(diskOfferingId);
+                volume.setSize(size);
+                volume.setMinIops(minIops);
+                volume.setMaxIops(maxIops);
+                volume.setInstanceId(null);
+                volume.setUpdated(new Date());
+                volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
                 volume.setDisplayVolume(displayVolume);
-        if (parentVolume != null) {
-            volume.setTemplateId(parentVolume.getTemplateId());
-            volume.setFormat(parentVolume.getFormat());
-        } else {
-            volume.setTemplateId(null);
-        }
+                if (parentVolume != null) {
+                    volume.setTemplateId(parentVolume.getTemplateId());
+                    volume.setFormat(parentVolume.getFormat());
+                } else {
+                    volume.setTemplateId(null);
+                }
 
-        volume = _volsDao.persist(volume);
-        if (cmd.getSnapshotId() == null && displayVolume) {
-            // for volume created from snapshot, create usage event after volume creation
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    diskOfferingId, null, size, Volume.class.getName(), volume.getUuid(), displayVolume);
-        }
+                volume = _volsDao.persist(volume);
+                if (cmd.getSnapshotId() == null && displayVolume) {
+                    // for volume created from snapshot, create usage event after volume creation
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                            diskOfferingId, null, size, Volume.class.getName(), volume.getUuid(), displayVolume);
+                }
 
-        CallContext.current().setEventDetails("Volume Id: " + volume.getId());
+                CallContext.current().setEventDetails("Volume Id: " + volume.getId());
 
-        // Increment resource count during allocation; if actual creation fails,
-        // decrement it
+                // Increment resource count during allocation; if actual creation fails,
+                // decrement it
                 _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);
                 _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, displayVolume, new Long(volume.getSize()));
-        return volume;
-    }
+                return volume;
+            }
         });
     }
 
