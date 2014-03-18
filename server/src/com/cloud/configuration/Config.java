@@ -133,13 +133,6 @@ public enum Config {
 
     // Storage
 
-    VolumeProvisioningType(
-            "Storage",
-            ManagementServer.class,
-            String.class, "storage.volume.provisioningtype",
-            "thin",
-            "Provisioning type used to create volumes. Valid values are thin, sparse, fat.",
-            null),
     StorageStatsInterval(
             "Storage",
             ManagementServer.class,

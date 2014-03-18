@@ -397,7 +397,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
         DiskOfferingVO diskOffering = null;
-        Storage.ProvisioningType provisioningType = Storage.ProvisioningType.SPARSE;
+        Storage.ProvisioningType provisioningType;
         Long size = null;
         Long minIops = null;
         Long maxIops = null;
@@ -484,6 +484,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
+            provisioningType = diskOffering.getProvisioningType();
+
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
                 // for validation
                 throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
@@ -511,6 +513,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
+
+            provisioningType = diskOffering.getProvisioningType();
 
             // one step operation - create volume in VM's cluster and attach it
             // to the VM
