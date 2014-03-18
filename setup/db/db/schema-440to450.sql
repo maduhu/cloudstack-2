@@ -43,13 +43,15 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.hv_ss_reserve,
         disk_offering.bytes_read_rate,
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
         disk_offering.iops_write_rate,
+        disk_offering.cache_mode,
         disk_offering.sort_key,
         disk_offering.type,
-		disk_offering.display_offering,
+        disk_offering.display_offering,
         domain.id domain_id,
         domain.uuid domain_uuid,
         domain.name domain_name,
@@ -58,8 +60,9 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         `cloud`.`disk_offering`
             left join
         `cloud`.`domain` ON disk_offering.domain_id = domain.id
-	where
-		disk_offering.state='ACTIVE';
+    where
+        disk_offering.state='ACTIVE';
+
 
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
@@ -74,10 +77,15 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.customized_iops,
+        disk_offering.min_iops,
+        disk_offering.max_iops,
+        disk_offering.hv_ss_reserve,
         disk_offering.bytes_read_rate,
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
         disk_offering.iops_write_rate,
+        disk_offering.cache_mode,
         service_offering.cpu,
         service_offering.speed,
         service_offering.ram_size,
@@ -101,8 +109,8 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `cloud`.`disk_offering` ON service_offering.id = disk_offering.id
             left join
         `cloud`.`domain` ON disk_offering.domain_id = domain.id
-	where
-		disk_offering.state='Active';
+    where
+        disk_offering.state='Active';
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
@@ -124,6 +132,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         volumes.display_volume,
         volumes.format,
         volumes.path,
+        volumes.chain_info,
         account.id account_id,
         account.uuid account_uuid,
         account.account_name account_name,
@@ -160,6 +169,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
         disk_offering.iops_write_rate,
+        disk_offering.cache_mode,
         storage_pool.id pool_id,
         storage_pool.uuid pool_uuid,
         storage_pool.name pool_name,
