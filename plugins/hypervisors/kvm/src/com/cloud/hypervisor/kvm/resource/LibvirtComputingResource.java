@@ -3177,6 +3177,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String vmName = "";
         String destIp = "";
 
+        static final int VIR_MIGRATE_LIVE        = (1 << 0);
+        static final int VIR_MIGRATE_COMPRESSED  = (1 << 11);
+
         MigrateKVMAsync(Domain dm, Connect dconn, String dxml, String vmName, String destIp) {
             this.dm = dm;
             this.dconn = dconn;
@@ -3189,9 +3192,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         public Domain call() throws LibvirtException {
             // set compression flag for migration if libvirt version supports it
             if (dconn.getLibVirVersion() < 1003000) {
-                return dm.migrate(dconn, (1 << 0), dxml, vmName, "tcp:" + destIp, _migrateSpeed);
+                return dm.migrate(dconn, VIR_MIGRATE_LIVE, dxml, vmName, "tcp:" + destIp, _migrateSpeed);
             } else {
-                return dm.migrate(dconn, (1 << 0)|(1 << 11), dxml, vmName, "tcp:" + destIp, _migrateSpeed);
+                return dm.migrate(dconn, VIR_MIGRATE_LIVE | VIR_MIGRATE_COMPRESSED, dxml, vmName, "tcp:" + destIp, _migrateSpeed);
             }
         }
     }
