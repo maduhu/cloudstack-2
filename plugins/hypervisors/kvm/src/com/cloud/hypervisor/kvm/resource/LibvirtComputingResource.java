@@ -4212,6 +4212,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setHostVmStateReport(getHostVmStateReport());
         cmd.setIqn(getIqn());
+        cmd.setHypervisorVersion("default");
 
         StartupStorageCommand sscmd = null;
         try {

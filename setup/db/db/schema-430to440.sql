@@ -765,4 +765,5 @@ ALTER TABLE `cloud`.`vpc` ADD COLUMN region_level_vpc boolean default false;
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD COLUMN instance_ip VARCHAR(40);
 ALTER TABLE `cloud`.`load_balancer_vm_map` DROP KEY `load_balancer_id`, ADD UNIQUE KEY load_balancer_id (`load_balancer_id`, `instance_id`, `instance_ip`);
 
-UPDATE hypervisor_capabilities SET storage_motion_supported=1 WHERE hypervisor_type='KVM' AND hypervisor_version='default';
+UPDATE hypervisor_capabilities SET storage_motion_supported=1 WHERE (hypervisor_type='KVM' OR hypervisor_type='LXC') AND hypervisor_version='default';
+UPDATE host SET hypervisor_version='default' WHERE type='Routing' AND (hypervisor_type='KVM' OR hypervisor_type='LXC') AND hypervisor_version IS NULL;
