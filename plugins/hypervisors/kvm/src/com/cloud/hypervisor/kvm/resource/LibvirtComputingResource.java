@@ -64,6 +64,7 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateWithStorageCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
@@ -211,6 +212,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -1277,6 +1279,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((PrepareForMigrationCommand)cmd);
             } else if (cmd instanceof MigrateCommand) {
                 return execute((MigrateCommand)cmd);
+            } else if (cmd instanceof MigrateWithStorageCommand) {
+                return execute((MigrateWithStorageCommand)cmd);
             } else if (cmd instanceof PingTestCommand) {
                 return execute((PingTestCommand)cmd);
             } else if (cmd instanceof CheckVirtualMachineCommand) {
@@ -3037,6 +3041,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private Answer execute(MigrateCommand cmd) {
         String vmName = cmd.getVmName();
+        String destinationIp = cmd.getDestinationIp();
+
+        String result = migrate(vmName, destinationIp);
+
+        return new MigrateAnswer(cmd, result == null, result, null);
+    }
+
+    private Answer execute(MigrateWithStorageCommand cmd) {
+        throw new NotImplementedException();
+    }
+
+    private String migrate(String vmName, String destinationIp){
 
         State state = null;
         String result = null;
@@ -3071,14 +3087,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 This is supported by libvirt-java from version 0.50.0
              */
-            xmlDesc = dm.getXMLDesc(0).replace(_privateIp, cmd.getDestinationIp());
+            xmlDesc = dm.getXMLDesc(0).replace(_privateIp, destinationIp);
 
-            dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp() + "/system");
+            dconn = new Connect("qemu+tcp://" + destinationIp + "/system");
 
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated");
             ExecutorService executor = Executors.newFixedThreadPool(1);
-            Callable<Domain> worker = new MigrateKVMAsync(dm, dconn, xmlDesc, vmName, cmd.getDestinationIp());
+            Callable<Domain> worker = new MigrateKVMAsync(dm, dconn, xmlDesc, vmName, destinationIp);
             Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
@@ -3167,7 +3183,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        return new MigrateAnswer(cmd, result == null, result, null);
+        return result;
     }
 
     private class MigrateKVMAsync implements Callable<Domain> {
