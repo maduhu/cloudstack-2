@@ -1,6 +1,6 @@
 # Update the box
 apt-get -y update
-apt-get -y install curl unzip
+DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -qq -y install curl unzip
 apt-get clean
 
 # Set up sudo, TODO: Check security concerns
