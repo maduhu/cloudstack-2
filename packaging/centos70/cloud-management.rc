@@ -21,7 +21,7 @@
 # chkconfig: - 80 20
 #
 ### BEGIN INIT INFO
-# Provides: tomcat6
+# Provides: tomcat7
 # Required-Start: $network $syslog
 # Required-Stop: $network $syslog
 # Default-Start:
@@ -99,11 +99,11 @@ case "$1" in
 		stop
 		set start
         set_ulimit
-		. /etc/rc.d/init.d/tomcat6
+		. /etc/rc.d/init.d/tomcat
 		;;
 	*)
         set_ulimit
-		. /etc/rc.d/init.d/tomcat6
+		. /etc/rc.d/init.d/tomcat
 esac
 
 exit $RETVAL

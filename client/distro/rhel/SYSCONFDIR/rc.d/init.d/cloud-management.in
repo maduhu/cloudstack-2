@@ -98,11 +98,11 @@ case "$1" in
         stop
         set start
         set_ulimit
-		. /etc/rc.d/init.d/tomcat6
+		. /etc/rc.d/init.d/tomcat
 		;;
 	*)
         set_ulimit
-		. /etc/rc.d/init.d/tomcat6
+		. /etc/rc.d/init.d/tomcat
 esac
 
 exit $RETVAL
