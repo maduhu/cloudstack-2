@@ -44,7 +44,7 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: tomcat7
+BuildRequires: tomcat
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,7 +59,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat7
+Requires: tomcat
 Requires: java7
 Requires: python
 Requires: bash
