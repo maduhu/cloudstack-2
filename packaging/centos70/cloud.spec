@@ -44,7 +44,7 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: tomcat6
+BuildRequires: tomcat7
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,7 +59,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat6
+Requires: tomcat7
 Requires: java7
 Requires: python
 Requires: bash
@@ -228,9 +228,9 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-ln -sf /usr/share/tomcat6/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+ln -sf /usr/share/tomcat7/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+ln -sf /usr/share/tomcat7/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
@@ -253,7 +253,7 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
+for name in db.properties log4j-cloud.xml tomcat7-nonssl.conf tomcat7-ssl.conf server-ssl.xml server-nonssl.xml \
             catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
@@ -435,17 +435,17 @@ else
 fi
 
 
-tomcatconf=%{_sysconfdir}/%{name}/management/tomcat6.conf
-oldtomcatconf=%{_sysconfdir}/cloud.rpmsave/management/tomcat6.conf
+tomcatconf=%{_sysconfdir}/%{name}/management/tomcat7.conf
+oldtomcatconf=%{_sysconfdir}/cloud.rpmsave/management/tomcat7.conf
 if [ -f $oldtomcatconf ] || [ -L $oldtomcatconf ] ; then
-    if stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
+    if stat -c %N $oldtomcatconf| grep -q tomcat7-ssl ; then
         if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
-        ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
-        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
+        ln -s %{_sysconfdir}/%{name}/management/tomcat7-ssl.conf $tomcatconf
+        echo Please verify the tomcat7.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
     else
         if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
-        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
-        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
+        ln -s %{_sysconfdir}/%{name}/management/tomcat7-nonssl.conf $tomcatconf
+        echo Please verify the tomcat7.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
     fi
 else
     echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
@@ -532,8 +532,8 @@ fi
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat7-nonssl.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat7-ssl.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
