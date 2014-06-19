@@ -16,6 +16,7 @@
 # under the License.
 from utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu
 from serviceConfig import *
+from serviceConfigServer import *
 class sysConfigFactory:
     @staticmethod
     def getSysConfigFactory(glbEnv):
@@ -189,11 +190,13 @@ class sysConfigServerRedhat(sysConfigServer):
         super(sysConfigServerRedhat, self).__init__(glbEnv)
         self.svo = serviceOpsRedhat()
         self.services = [sudoersConfig(self), 
-                         firewallConfigServer(self)]
+                         firewallConfigServer(self),
+                         cloudManagementConfigRedhat(self)]
     
 class sysConfigServerUbuntu(sysConfigServer):
     def __init__(self, glbEnv):
         super(sysConfigServerUbuntu, self).__init__(glbEnv)
         self.svo = serviceOpsUbuntu()
         self.services = [sudoersConfig(self), 
-                         ubuntuFirewallConfigServer(self)]
+                         ubuntuFirewallConfigServer(self),
+                         cloudManagementConfigUbuntu(self)]

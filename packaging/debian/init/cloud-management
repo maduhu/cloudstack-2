@@ -65,8 +65,7 @@ fi
 # The following variables can be overwritten in $DEFAULT
 
 # Run Tomcat 7 as this user ID
-TOMCAT6_USER=tomcat7
-TOMCAT7_GROUP=tomcat7
+TOMCAT7_USER=cloud
 
 # this is a work-around until there is a suitable runtime replacement
 # for dpkg-architecture for arch:all packages
@@ -159,7 +158,7 @@ fi
 CATALINA_PID="/var/run/$NAME.pid"
 CATALINA_SH="$CATALINA_HOME/bin/catalina.sh"
 BOOTSTRAP_CLASS=org.apache.catalina.startup.Bootstrap
-JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$CATALINA_HOME/bin/bootstrap.jar:/etc/cloudstack/management:/usr/share/cloudstack-management/setup"
+JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$CATALINA_HOME/bin/bootstrap.jar:$CATALINA_HOME/bin/tomcat-juli.jar:/etc/cloudstack/management:/usr/share/cloudstack-management/setup"
 
 # Look for Java Secure Sockets Extension (JSSE) JARs
 if [ -z "${JSSE_HOME}" -a -r "${JAVA_HOME}/jre/lib/jsse.jar" ]; then
@@ -226,9 +225,10 @@ case "$1" in
 		echo "// AUTO-GENERATED FILE from /etc/tomcat7/policy.d/" \
 			> "$POLICY_CACHE"
 		echo ""  >> "$POLICY_CACHE"
+        if ls $CATALINA_BASE/conf/policy.d/*.policy > /dev/null 2>&1 ; then
 		cat $CATALINA_BASE/conf/policy.d/*.policy \
 			>> "$POLICY_CACHE"
-
+        fi
 		# Remove / recreate JVM_TMP directory
 		rm -rf "$JVM_TMP"
 		mkdir -p "$JVM_TMP" || {
@@ -238,14 +238,13 @@ case "$1" in
 		chown $TOMCAT7_USER "$JVM_TMP"
 		cd "$JVM_TMP"
 
-
 		# fix storage issues on nfs mounts
 		umask 000
 		$DAEMON -user "$TOMCAT7_USER" -cp "$JSVC_CLASSPATH" \
 		    -outfile SYSLOG -errfile SYSLOG \
 		    -pidfile "$CATALINA_PID" $JAVA_OPTS "$BOOTSTRAP_CLASS"
 
-		catalina_sh start $SECURITY
+		#catalina_sh start $SECURITY
 		sleep 5
 		if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
 			--user $TOMCAT7_USER --exec "$JAVA_HOME/bin/java" \
