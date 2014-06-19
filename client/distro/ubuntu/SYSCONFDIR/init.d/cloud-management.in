@@ -35,7 +35,7 @@ NAME=cloud-management
 DESC="CloudStack-specific Tomcat servlet engine"
 DAEMON=/usr/bin/jsvc
 CATALINA_HOME=@MSENVIRON@
-DEFAULT=@MSCONF@/tomcat6.conf
+DEFAULT=@MSCONF@/tomcat7.conf
 JVM_TMP=/tmp/$NAME-temp
 
 # We have to explicitly set the HOME variable to the homedir from the user "cloud"

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# /etc/init.d/tomcat6 -- startup script for the Tomcat 6 servlet engine
+# /etc/init.d/tomcat7 -- startup script for the Tomcat 6 servlet engine
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -30,12 +30,14 @@
 # Description:       Start the Tomcat servlet engine that runs the CloudStack Management Server.
 ### END INIT INFO
 
+set -e
+
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 NAME=cloudstack-management
 DESC="CloudStack-specific Tomcat servlet engine"
 DAEMON=/usr/bin/jsvc
 CATALINA_HOME=/usr/share/cloudstack-management
-DEFAULT=/etc/cloudstack/management/tomcat6.conf
+DEFAULT=/etc/cloudstack/management/tomcat7.conf
 JVM_TMP=/tmp/$NAME-temp
 
 # We have to explicitly set the HOME variable to the homedir from the user "cloud"
@@ -47,7 +49,7 @@ if [ `id -u` -ne 0 ]; then
 	echo "You need root privileges to run this script"
 	exit 1
 fi
- 
+
 # Make sure tomcat is started with system locale
 if [ -r /etc/default/locale ]; then
 	. /etc/default/locale
@@ -55,17 +57,43 @@ if [ -r /etc/default/locale ]; then
 fi
 
 . /lib/lsb/init-functions
-. /etc/default/rcS
+if [ -r /etc/default/rcS ]; then
+	. /etc/default/rcS
+fi
 
 
 # The following variables can be overwritten in $DEFAULT
 
-# Run Tomcat 6 as this user ID
-TOMCAT6_USER=tomcat6
+# Run Tomcat 7 as this user ID
+TOMCAT6_USER=tomcat7
+TOMCAT7_GROUP=tomcat7
 
+# this is a work-around until there is a suitable runtime replacement
+# for dpkg-architecture for arch:all packages
+# this function sets the variable OPENJDKS
+find_openjdks()
+{
+	for jvmdir in /usr/lib/jvm/java-7-openjdk-*
+	do
+		if [ -d "${jvmdir}" -a "${jvmdir}" != "/usr/lib/jvm/java-7-openjdk-common" ]
+		then
+			OPENJDKS=$jvmdir
+		fi
+	done
+	for jvmdir in /usr/lib/jvm/java-6-openjdk-*
+	do
+		if [ -d "${jvmdir}" -a "${jvmdir}" != "/usr/lib/jvm/java-6-openjdk-common" ]
+		then
+			OPENJDKS="${OPENJDKS} ${jvmdir}"
+		fi
+	done
+}
+
+OPENJDKS=""
+find_openjdks
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not
 # defined in $DEFAULT)
-JDK_DIRS="/usr/lib/jvm/java-7-openjdk-amd64 /usr/lib/jvm/java-7-openjdk-i386 /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun"
+JDK_DIRS="/usr/lib/jvm/default-java ${OPENJDKS} /usr/lib/jvm/java-7-oracle"
 
 # Look for the right JVM to use
 for jdir in $JDK_DIRS; do
@@ -79,7 +107,7 @@ export JAVA_HOME
 CATALINA_BASE=/usr/share/cloudstack-management
 
 # Use the Java security manager? (yes/no)
-TOMCAT6_SECURITY=no
+TOMCAT7_SECURITY=no
 
 # Default Java options
 # Set java.awt.headless=true if JAVA_OPTS is not set so the
@@ -106,6 +134,10 @@ fi
 
 POLICY_CACHE="$CATALINA_BASE/work/catalina.policy"
 
+if [ -z "$CATALINA_TMPDIR" ]; then
+        CATALINA_TMPDIR="$JVM_TMP"
+fi
+
 JAVA_OPTS="$JAVA_OPTS -Djava.endorsed.dirs=$CATALINA_HOME/endorsed -Dcatalina.base=$CATALINA_BASE -Dcatalina.home=$CATALINA_HOME -Djava.io.tmpdir=$JVM_TMP"
 
 # Set the JSP compiler if set in the tomcat6.default file
@@ -113,8 +145,9 @@ if [ -n "$JSP_COMPILER" ]; then
 	JAVA_OPTS="$JAVA_OPTS -Dbuild.compiler=$JSP_COMPILER"
 fi
 
-if [ "$TOMCAT6_SECURITY" = "yes" ]; then
-	JAVA_OPTS="$JAVA_OPTS -Djava.security.manager -Djava.security.policy=$POLICY_CACHE"
+SECURITY=""
+if [ "$TOMCAT7_SECURITY" = "yes" ]; then
+	SECURITY="-security"
 fi
 
 # Set juli LogManager if logging.properties is provided
@@ -124,6 +157,7 @@ fi
 
 # Define other required variables
 CATALINA_PID="/var/run/$NAME.pid"
+CATALINA_SH="$CATALINA_HOME/bin/catalina.sh"
 BOOTSTRAP_CLASS=org.apache.catalina.startup.Bootstrap
 JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$CATALINA_HOME/bin/bootstrap.jar:/etc/cloudstack/management:/usr/share/cloudstack-management/setup"
 
@@ -133,10 +167,47 @@ if [ -z "${JSSE_HOME}" -a -r "${JAVA_HOME}/jre/lib/jsse.jar" ]; then
 fi
 export JSSE_HOME
 
+catalina_sh() {
+        # Escape any double quotes in the value of JAVA_OPTS
+        JAVA_OPTS="$(echo $JAVA_OPTS | sed 's/\"/\\\"/g')"
+
+        AUTHBIND_COMMAND=""
+        if [ "$AUTHBIND" = "yes" -a "$1" = "start" ]; then
+                AUTHBIND_COMMAND="/usr/bin/authbind --deep /bin/bash -c "
+        fi
+
+        # Define the command to run Tomcat's catalina.sh as a daemon
+        # set -a tells sh to export assigned variables to spawned shells.
+        TOMCAT_SH="set -a; JAVA_HOME=\"$JAVA_HOME\"; source \"$DEFAULT\"; \
+                CATALINA_HOME=\"$CATALINA_HOME\"; \
+                CATALINA_BASE=\"$CATALINA_BASE\"; \
+                JAVA_OPTS=\"$JAVA_OPTS\"; \
+                CATALINA_PID=\"$CATALINA_PID\"; \
+                CATALINA_TMPDIR=\"$CATALINA_TMPDIR\"; \
+                LANG=\"$LANG\"; JSSE_HOME=\"$JSSE_HOME\"; \
+                cd \"$CATALINA_BASE\"; \
+                \"$CATALINA_SH\" $@"
+
+        if [ "$AUTHBIND" = "yes" -a "$1" = "start" ]; then
+                TOMCAT_SH="'$TOMCAT_SH'"
+        fi
+
+        # Run the catalina.sh script as a daemon
+        set +e
+        touch "$CATALINA_PID" "$CATALINA_BASE"/logs/catalina.out
+        chown $TOMCAT7_USER "$CATALINA_PID" "$CATALINA_BASE"/logs/catalina.out
+        start-stop-daemon --start -b -u "$TOMCAT7_USER" -g "$TOMCAT7_GROUP" \
+                -c "$TOMCAT7_USER" -d "$CATALINA_TMPDIR" -p "$CATALINA_PID" \
+                -x /bin/bash -- -c "$AUTHBIND_COMMAND $TOMCAT_SH"
+        status="$?"
+        set +a -e
+        return $status
+}
+
 case "$1" in
   start)
 	if [ -z "$JAVA_HOME" ]; then
-		log_failure_msg "no JDK found - please set JAVA_HOME"
+		log_failure_msg "no JDK or JRE found - please set JAVA_HOME"
 		exit 1
 	fi
 
@@ -147,65 +218,79 @@ case "$1" in
 
 	log_daemon_msg "Starting $DESC" "$NAME"
 	if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
+		--user $TOMCAT7_USER --exec "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 
 		# Regenerate POLICY_CACHE file
 		umask 022
-		echo "// AUTO-GENERATED FILE from /etc/tomcat6/policy.d/" \
+		echo "// AUTO-GENERATED FILE from /etc/tomcat7/policy.d/" \
 			> "$POLICY_CACHE"
 		echo ""  >> "$POLICY_CACHE"
-		if ls $CATALINA_BASE/conf/policy.d/*.policy > /dev/null 2>&1 ; then
 		cat $CATALINA_BASE/conf/policy.d/*.policy \
 			>> "$POLICY_CACHE"
-		fi
 
 		# Remove / recreate JVM_TMP directory
 		rm -rf "$JVM_TMP"
-		mkdir "$JVM_TMP" || {
+		mkdir -p "$JVM_TMP" || {
 			log_failure_msg "could not create JVM temporary directory"
 			exit 1
 		}
-		chown $TOMCAT6_USER "$JVM_TMP"
+		chown $TOMCAT7_USER "$JVM_TMP"
 		cd "$JVM_TMP"
 
 
 		# fix storage issues on nfs mounts
 		umask 000
-		$DAEMON -user "$TOMCAT6_USER" -cp "$JSVC_CLASSPATH" \
+		$DAEMON -user "$TOMCAT7_USER" -cp "$JSVC_CLASSPATH" \
 		    -outfile SYSLOG -errfile SYSLOG \
 		    -pidfile "$CATALINA_PID" $JAVA_OPTS "$BOOTSTRAP_CLASS"
 
+		catalina_sh start $SECURITY
 		sleep 5
-        	if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-			--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
+		if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
+			--user $TOMCAT7_USER --exec "$JAVA_HOME/bin/java" \
 			>/dev/null; then
+			if [ -f "$CATALINA_PID" ]; then
+				rm -f "$CATALINA_PID"
+			fi
 			log_end_msg 1
 		else
 			log_end_msg 0
 		fi
 	else
-	        log_progress_msg "(already running)"
+		log_progress_msg "(already running)"
 		log_end_msg 0
 	fi
 	;;
   stop)
 	log_daemon_msg "Stopping $DESC" "$NAME"
-        if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user "$TOMCAT6_USER" --startas "$JAVA_HOME/bin/java" \
-		>/dev/null; then
-		log_progress_msg "(not running)"
+
+	set +e
+	if [ -f "$CATALINA_PID" ]; then
+		start-stop-daemon --stop --pidfile "$CATALINA_PID" \
+			--user "$TOMCAT7_USER" \
+			--retry=TERM/20/KILL/5 >/dev/null
+		if [ $? -eq 1 ]; then
+			log_progress_msg "$DESC is not running but pid file exists, cleaning up"
+		elif [ $? -eq 3 ]; then
+			PID="`cat $CATALINA_PID`"
+			log_failure_msg "Failed to stop $NAME (pid $PID)"
+			exit 1
+		fi
+		rm -f "$CATALINA_PID"
+		rm -rf "$JVM_TMP"
 	else
-		$DAEMON -cp "$JSVC_CLASSPATH" -pidfile "$CATALINA_PID" \
-		     -stop "$BOOTSTRAP_CLASS"
+		log_progress_msg "(not running)"
 	fi
-	rm -rf "$JVM_TMP"
 	log_end_msg 0
+	set -e
 	;;
    status)
-        if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
-		>/dev/null; then
+	set +e
+	start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
+		--user $TOMCAT7_USER --exec "$JAVA_HOME/bin/java" \
+		>/dev/null 2>&1
+	if [ "$?" = "0" ]; then
 
 		if [ -f "$CATALINA_PID" ]; then
 		    log_success_msg "$DESC is not running, but pid file exists."
@@ -217,23 +302,22 @@ case "$1" in
 	else
 		log_success_msg "$DESC is running with pid `cat $CATALINA_PID`"
 	fi
-        ;;
+	set -e
+	;;
   restart|force-reload)
-        if start-stop-daemon --test --stop --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
-		>/dev/null; then
+	if [ -f "$CATALINA_PID" ]; then
 		$0 stop
 		sleep 1
 	fi
 	$0 start
 	;;
   try-restart)
-        if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
+	if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
+		--user $TOMCAT7_USER --exec "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 		$0 start
 	fi
-        ;;
+	;;
   *)
 	log_success_msg "Usage: $0 {start|stop|restart|try-restart|force-reload|status}"
 	exit 1
