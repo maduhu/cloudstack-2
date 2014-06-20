@@ -37,17 +37,26 @@ public class DiskTO {
     private Long diskSeq;
     private String path;
     private Volume.Type type;
+    private Long bytesReadRate;
+    private Long bytesWriteRate;
+    private Long iopsReadRate;
+    private Long iopsWriteRate;
     private Map<String, String> _details;
 
     public DiskTO() {
 
     }
 
-    public DiskTO(DataTO data, Long diskSeq, String path, Volume.Type type) {
+    public DiskTO(DataTO data, Long diskSeq, String path, Volume.Type type,
+                  Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         this.data = data;
         this.diskSeq = diskSeq;
         this.path = path;
         this.type = type;
+        this.bytesReadRate = bytesReadRate;
+        this.bytesWriteRate = bytesWriteRate;
+        this.iopsReadRate = iopsReadRate;
+        this.iopsWriteRate = iopsWriteRate;
     }
 
     public DataTO getData() {
@@ -81,6 +90,22 @@ public class DiskTO {
     public void setType(Volume.Type type) {
         this.type = type;
     }
+
+    public Long getBytesReadRate() { return bytesReadRate; }
+
+    public void setBytesReadRate(Long bytesReadRate) { this.bytesReadRate = bytesReadRate; }
+
+    public Long getBytesWriteRate() { return bytesWriteRate; }
+
+    public void setBytesWriteRate(Long bytesWriteRate) { this.bytesWriteRate = bytesWriteRate; }
+
+    public Long getIopsReadRate() { return iopsReadRate; }
+
+    public void setIopsReadRate(Long iopsReadRate) { this.iopsReadRate = iopsReadRate; }
+
+    public Long getIopsWriteRate() { return iopsWriteRate; }
+
+    public void setIopsWriteRate(Long iopsWriteRate) { this.iopsWriteRate = iopsWriteRate; }
 
     public void setDetails(Map<String, String> details) {
         _details = details;

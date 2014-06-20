@@ -74,7 +74,18 @@ public class LibvirtDomainXMLParser {
                     int port = Integer.parseInt(getAttrValue("host", "port", disk));
                     String diskLabel = getAttrValue("target", "dev", disk);
                     String bus = getAttrValue("target", "bus", disk);
-
+                    Long readBytesSec = null;
+                    Long writeBytesSec = null;
+                    Long readIopsSec = null;
+                    Long writeIopsSec = null;
+                    NodeList iotunes = disk.getElementsByTagName("iotune");
+                    if(iotunes.getLength() == 1){
+                        Element iotune = (Element)iotunes.item(0);
+                        readBytesSec = Long.getLong(getTagValue("read_bytes_sec", iotune));
+                        writeBytesSec = Long.getLong(getTagValue("write_bytes_sec", iotune));
+                        readIopsSec = Long.getLong(getTagValue("read_iops_sec", iotune));
+                        writeIopsSec = Long.getLong(getTagValue("write_iops_sec", iotune));
+                    }
                     DiskDef.diskFmtType fmt = null;
                     if (diskFmtType != null) {
                         fmt = DiskDef.diskFmtType.valueOf(diskFmtType.toUpperCase());
@@ -82,7 +93,7 @@ public class LibvirtDomainXMLParser {
 
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
                         DiskDef.diskBus.valueOf(bus.toUpperCase()),
-                        DiskDef.diskProtocol.valueOf(protocol.toUpperCase()), fmt);
+                        DiskDef.diskProtocol.valueOf(protocol.toUpperCase()), fmt, readBytesSec, writeBytesSec, readIopsSec, writeIopsSec);
                     def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);

@@ -497,7 +497,8 @@ public class LibvirtVMDef {
 
         }
 
-        public void defFileBasedDisk(String filePath, int devId, diskBus bus, diskFmtType diskFmtType) {
+        public void defFileBasedDisk(String filePath, int devId, diskBus bus, diskFmtType diskFmtType,
+                                     Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
 
             _diskType = diskType.FILE;
             _deviceType = deviceType.DISK;
@@ -506,6 +507,10 @@ public class LibvirtVMDef {
             _diskLabel = getDevLabel(devId, bus);
             _diskFmtType = diskFmtType;
             _bus = bus;
+            _bytesReadRate = bytesReadRate;
+            _bytesWriteRate = bytesWriteRate;
+            _iopsReadRate = iopsReadRate;
+            _iopsWriteRate = iopsWriteRate;
 
         }
 
@@ -519,7 +524,8 @@ public class LibvirtVMDef {
             _bus = diskBus.IDE;
         }
 
-        public void defBlockBasedDisk(String diskName, int devId, diskBus bus) {
+        public void defBlockBasedDisk(String diskName, int devId, diskBus bus,
+                                      Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
             _diskType = diskType.BLOCK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
@@ -527,6 +533,10 @@ public class LibvirtVMDef {
             _sourcePath = diskName;
             _diskLabel = getDevLabel(devId, bus);
             _bus = bus;
+            _bytesReadRate = bytesReadRate;
+            _bytesWriteRate = bytesWriteRate;
+            _iopsReadRate = iopsReadRate;
+            _iopsWriteRate = iopsWriteRate;
         }
 
         public void defBlockBasedDisk(String diskName, String diskLabel, diskBus bus) {
@@ -540,7 +550,7 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, int devId, diskBus bus,
-            diskProtocol protocol, diskFmtType diskFmtType) {
+            diskProtocol protocol, diskFmtType diskFmtType, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType;
@@ -553,10 +563,14 @@ public class LibvirtVMDef {
             _diskLabel = getDevLabel(devId, bus);
             _bus = bus;
             _diskProtocol = protocol;
+            _bytesReadRate = bytesReadRate;
+            _bytesWriteRate = bytesWriteRate;
+            _iopsReadRate = iopsReadRate;
+            _iopsWriteRate = iopsWriteRate;
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, String diskLabel, diskBus bus,
-            diskProtocol protocol, diskFmtType diskFmtType) {
+            diskProtocol protocol, diskFmtType diskFmtType, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType;
@@ -569,6 +583,10 @@ public class LibvirtVMDef {
             _diskLabel = diskLabel;
             _bus = bus;
             _diskProtocol = protocol;
+            _bytesReadRate = bytesReadRate;
+            _bytesWriteRate = bytesWriteRate;
+            _iopsReadRate = iopsReadRate;
+            _iopsWriteRate = iopsWriteRate;
         }
 
         public void setReadonly() {
