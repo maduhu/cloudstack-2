@@ -46,6 +46,8 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    protected CapacityManager _capacityMgr;
 
     private final SearchBuilder<StoragePoolJoinVO> spSearch;
 
@@ -92,6 +94,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());
+        poolResponse.setUsedIops(_capacityMgr.getUsedIops(pool.getId()));
 
         // TODO: StatsCollector does not persist data
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
