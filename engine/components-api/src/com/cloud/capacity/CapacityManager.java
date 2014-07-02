@@ -105,5 +105,7 @@ public interface CapacityManager {
 
     long getUsedBytes(StoragePoolVO pool);
 
+    long getUsedIops(long pool);
+
     long getUsedIops(StoragePoolVO pool);
 }

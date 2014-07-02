@@ -543,10 +543,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public long getUsedIops(StoragePoolVO pool) {
+    public long getUsedIops(long poolId) {
         long usedIops = 0;
 
-        List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
+        List<VolumeVO> volumes = _volumeDao.findByPoolId(poolId, null);
 
         if (volumes != null && volumes.size() > 0) {
             for (VolumeVO volume : volumes) {
@@ -555,6 +555,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
 
         return usedIops;
+    }
+
+    @Override
+    public long getUsedIops(StoragePoolVO pool) {
+        return getUsedIops(pool.getId());
     }
 
     @Override
