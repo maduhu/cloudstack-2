@@ -35,6 +35,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -4735,7 +4736,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 final Command cmd;
 
                 if (host.getHypervisorType() == HypervisorType.XenServer) {
-                    DiskTO disk = new DiskTO(volumeInfo.getTO(), root.getDeviceId(), root.getPath(), root.getVolumeType());
+
+                    DiskOffering diskOffering = _diskOfferingDao.findById(root.getDiskOfferingId());
+                    DiskTO disk = new DiskTO(volumeInfo.getTO(), root.getDeviceId(), root.getPath(), root.getVolumeType(),
+                            diskOffering.getBytesReadRate(), diskOffering.getBytesWriteRate(), diskOffering.getIopsReadRate(), diskOffering.getIopsWriteRate());
 
                     // it's OK in this case to send a detach command to the host for a root volume as this
                     // will simply lead to the SR that supports the root volume being removed

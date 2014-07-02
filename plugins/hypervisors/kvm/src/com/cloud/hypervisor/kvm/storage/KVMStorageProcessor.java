@@ -1007,7 +1007,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
             attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue(),
-                    vol.getBytesReadRate(), vol.getBytesWriteRate(), vol.getIopsReadRate(), vol.getIopsWriteRate());
+                    disk.getBytesReadRate(), disk.getBytesWriteRate(), disk.getIopsReadRate(), disk.getIopsWriteRate());
 
             return new AttachAnswer(disk);
         } catch (LibvirtException e) {

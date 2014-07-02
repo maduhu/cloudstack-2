@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.DiskOffering;
 import com.cloud.utils.DateUtil;
 import org.apache.log4j.Logger;
 
@@ -1496,7 +1497,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (sendCommand) {
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
-            DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+            DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
+
+            DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType(),
+                diskOffering.getBytesReadRate(), diskOffering.getBytesWriteRate(), diskOffering.getIopsReadRate(), diskOffering.getIopsWriteRate());
+
 
             DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
 
@@ -2048,7 +2053,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
-            DiskTO disk = new DiskTO(volTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType());
+            DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volumeToAttach.getDiskOfferingId());
+            DiskTO disk = new DiskTO(volTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType(),
+                diskOffering.getBytesReadRate(), diskOffering.getBytesWriteRate(), diskOffering.getIopsReadRate(), diskOffering.getIopsWriteRate());
 
             AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
 

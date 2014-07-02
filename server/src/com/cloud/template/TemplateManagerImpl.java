@@ -475,12 +475,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
             iso.setGuestOsType(displayName);
-            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
+            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO, null, null, null, null);
             profile.addDisk(disk);
         } else {
             TemplateObjectTO iso = new TemplateObjectTO();
             iso.setFormat(ImageFormat.ISO);
-            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
+            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO, null, null, null, null);
             profile.addDisk(disk);
         }
     }
@@ -1032,7 +1032,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         DataTO isoTO = tmplt.getTO();
-        DiskTO disk = new DiskTO(isoTO, null, null, Volume.Type.ISO);
+        DiskTO disk = new DiskTO(isoTO, null, null, Volume.Type.ISO, null, null, null, null);
         Command cmd = null;
         if (attach) {
             cmd = new AttachCommand(disk, vmName);

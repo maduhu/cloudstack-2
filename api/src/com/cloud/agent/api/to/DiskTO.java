@@ -47,6 +47,13 @@ public class DiskTO {
 
     }
 
+    public DiskTO(DataTO data, Long diskSeq, String path, Volume.Type type) {
+        this.data = data;
+        this.diskSeq = diskSeq;
+        this.path = path;
+        this.type = type;
+    }
+
     public DiskTO(DataTO data, Long diskSeq, String path, Volume.Type type,
                   Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         this.data = data;
