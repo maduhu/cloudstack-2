@@ -533,6 +533,7 @@ dictionary = {
 'label.disabling.vpn.access': '<fmt:message key="label.disabling.vpn.access" />',
 'label.disk.allocated': '<fmt:message key="label.disk.allocated" />',
 'label.disk.iops.total': '<fmt:message key="label.disk.iops.total" />',
+'label.disk.iops.used': '<fmt:message key="label.disk.iops.used" />',
 'label.disk.bytes.read.rate': '<fmt:message key="label.disk.bytes.read.rate" />',
 'label.disk.bytes.write.rate': '<fmt:message key="label.disk.bytes.write.rate" />',
 'label.disk.iops.write.rate': '<fmt:message key="label.disk.iops.write.rate" />',

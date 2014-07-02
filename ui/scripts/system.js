@@ -16455,6 +16455,14 @@
                                             return ""; else
                                             return args;
                                         }
+                                    },
+                                    usediops: {
+                                        label: 'label.disk.iops.used',
+                                        converter: function (args) {
+                                            if (args == null || args == 0)
+                                                return ""; else
+                                                return args;
+                                        }
                                     }
                                 }],
                                 
